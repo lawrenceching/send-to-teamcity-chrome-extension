@@ -56,7 +56,7 @@ class App extends React.Component {
             console.log('Running in a Chrome Extension environment');
             chrome.storage.sync.get(['teamcityUrl', 'teamcityToken', 'teamcityBuildTypeId', 'matchPattern'], function(data) {
                 console.log(data);
-                self.setState({data});
+                self.setState(data);
 
                 chrome.runtime.sendMessage({action: "getMatchedTab"}, function(response) {
                     if( response !== null && response !== undefined ) {
@@ -97,7 +97,14 @@ class App extends React.Component {
 
     render() {
 
-        const {tableData} = this.state;
+
+        const {
+            tableData,
+            teamcityUrl,
+            teamcityToken,
+            teamcityBuildTypeId,
+            matchPattern,
+        } = this.state;
 
         console.log('render(): ', tableData);
         return (
@@ -120,13 +127,13 @@ class App extends React.Component {
                     <TabPane tab="Options" key="options">
                         <Form {...layout}>
                             <Form.Item label="TeamCity Url">
-                                <Input placeholder="http://teamcity.example.com"/>
+                                <Input placeholder="http://teamcity.example.com" value={teamcityUrl}/>
                             </Form.Item>
                             <Form.Item label="TeamCity Token">
-                                <Input placeholder=""/>
+                                <Input placeholder="" value={teamcityToken}/>
                             </Form.Item>
                             <Form.Item label="TeamCity Build Type Id">
-                                <Input placeholder=""/>
+                                <Input placeholder="" value={teamcityBuildTypeId}/>
                             </Form.Item>
                             <Form.Item>
                                 <Button type="primary">Submit</Button>
