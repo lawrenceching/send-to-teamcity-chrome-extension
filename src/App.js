@@ -1,6 +1,6 @@
 /*global chrome*/
 import React, {useState} from 'react';
-import {Button, Divider, Form, Input, Radio, Table, Tabs} from 'antd';
+import {Button, Divider, Form, Input, Row, Col, Table, Tabs, message} from 'antd';
 import './App.css';
 
 const {TabPane} = Tabs;
@@ -37,12 +37,27 @@ const rowSelection = {
     }),
 };
 
+async function submitUrls(urls) {
+    console.log('Submitting urls: ', urls);
+
+    return await (new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+            action: "submitAll",
+            urls
+        }, function (response) {
+            console.log('Received response from background: ', response);
+            resolve(response.urls);
+        });
+    }));
+
+}
+
 class App extends React.Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            tableData: [],
+            urls: [],
             teamcityUrl: null,
             teamcityToken: null,
             teamcityBuildTypeId: null,
@@ -61,27 +76,8 @@ class App extends React.Component {
                 chrome.runtime.sendMessage({action: "getMatchedTab"}, function(response) {
                     if( response !== null && response !== undefined ) {
                         const urls = response.urls;
-                        console.log(urls);
-                        const pattern = data.matchPattern;
-                        let re = new RegExp(pattern);
-                        const filteredUrls = urls.filter(url => re.test(url))
-
-                        console.log('setState():filteredUrls: ', filteredUrls);
-
-                        let i = 1;
-                        const tableData = filteredUrls.map(url => {
-                            return {
-                                key: '' + (i++),
-                                url,
-                                title: '',
-                            };
-                        });
-
-                        console.log('setState():tableData: ', tableData);
-
-
                         self.setState({
-                            tableData: tableData
+                            urls: urls
                         })
                     }
                 });
@@ -95,16 +91,34 @@ class App extends React.Component {
     componentWillUnmount() {
     }
 
+    async onSubmitButtonClick(urls) {
+        console.log('onSubmitButtonClick');
+        const submittedUrls = await submitUrls(urls);
+        message.info(`${submittedUrls.length} pages are submitted to TeamCity!`);
+    }
+
     render() {
-
-
         const {
-            tableData,
+            urls,
             teamcityUrl,
             teamcityToken,
             teamcityBuildTypeId,
             matchPattern,
         } = this.state;
+
+        let re = new RegExp(matchPattern);
+        const filteredUrls = urls.filter(url => re.test(url))
+
+        console.log('setState():filteredUrls: ', filteredUrls);
+
+        let i = 1;
+        const tableData = filteredUrls.map(url => {
+            return {
+                key: '' + (i++),
+                url,
+                title: '',
+            };
+        });
 
         console.log('render(): ', tableData);
         return (
@@ -112,6 +126,17 @@ class App extends React.Component {
 
                 <Tabs defaultActiveKey="1" onChange={callback}>
                     <TabPane tab="Batch Submission" key="batch-submission">
+
+                        <Row style={
+                            {margin: '10px'}
+                        }>
+                            <Col span={8}>
+                                <Input placeholder="" value={matchPattern}/>
+                            </Col>
+                            <Col span={2}><Button type="primary">Filter</Button></Col>
+                            <Col span={12}></Col>
+                            <Col span={2}><Button type="primary" onClick={() => this.onSubmitButtonClick(filteredUrls)}>Submit</Button></Col>
+                        </Row>
                         <div>
                             <Table
                                 rowSelection={{

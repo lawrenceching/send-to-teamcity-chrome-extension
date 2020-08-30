@@ -42,6 +42,7 @@ async function submitAll(request, sender, sendResponse) {
             
         }
     }
+    sendResponse({urls});
 }
 chrome.runtime.onInstalled.addListener(function() {
 
