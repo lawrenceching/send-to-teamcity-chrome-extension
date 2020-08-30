@@ -6,22 +6,25 @@ let matchedUrlsTextArea = document.getElementById('matchedUrls');
 let matchPatternInput = document.getElementById('matchPattern')
 let submitAllButton = document.getElementById('submitAll')
 
-chrome.storage.sync.get(['teamcityUrl', 'teamcityToken', 'teamcityBuildTypeId'], function(data) {
+chrome.storage.sync.get(['teamcityUrl', 'teamcityToken', 'teamcityBuildTypeId', 'matchPattern'], function(data) {
     teamCityUrlInput.value = data.teamcityUrl;
     teamCityTokenInput.value = data.teamcityToken;
     teamcityBuildTypeIdInput.value = data.teamcityBuildTypeId;
+    matchPatternInput.value = data.matchPattern;
 });
 
 saveBtn.addEventListener('click', (event) => {
     const teamcityUrl =  teamCityUrlInput.value;
     const teamcityToken = teamCityTokenInput.value
     const teamcityBuildTypeId = teamcityBuildTypeIdInput.value
+    const matchPattern = matchPatternInput.value
     chrome.storage.sync.set({
         teamcityUrl,
         teamcityToken,
-        teamcityBuildTypeId
+        teamcityBuildTypeId,
+        matchPattern,
     }, function() {
-        console.log('Save configuration: ', teamcityUrl, teamcityToken);
+        console.log('Save configuration: ', teamcityUrl, teamcityToken, teamcityBuildTypeId, matchPattern);
       })
 });
 
