@@ -12,13 +12,44 @@ async function readConfiguration() {
     return p;
 }
 
+async function sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTypeId, url) {
+    const resp = await fetch(teamcityUrl + '/app/rest/buildQueue', {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/xml',
+            'Authorization': 'Bearer ' + teamcityToken,
+        },
+        body: `<build>
+                   <buildType id=\"${teamcityBuildTypeId}\"/>
+                   <properties>
+                   <property name=\"url\" value=\"${url}\"/>
+                   </properties>
+                </build>`
+    });
+    return resp;
+}
+
+async function submitAll(request, sender, sendResponse) {
+    const urls = request.urls;
+    const { teamcityUrl, teamcityToken, teamcityBuildTypeId } = await readConfiguration();
+
+    for (const url of urls) {
+        const resp = await sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTypeId, url);
+        console.log(`${resp.status} ${url}`);
+        if(resp.ok) {
+            
+        }
+    }
+}
 chrome.runtime.onInstalled.addListener(function() {
 
     chrome.runtime.onMessage.addListener(
         function(request, sender, sendResponse) {
             
             switch (request.action) {
-                case "getMatchedTab":
+                case 'getMatchedTab':
                     chrome.windows.getAll({populate:true},function(windows){
                         windows.forEach(function(window){
                           const urls = window.tabs.map(function(tab){
@@ -29,6 +60,9 @@ chrome.runtime.onInstalled.addListener(function() {
                       });
 
                   break;
+                case 'submitAll':
+                    submitAll(request, sender, sendResponse)
+                    break;
                 default:
                   sendResponse({});
             }
@@ -52,21 +86,7 @@ chrome.runtime.onInstalled.addListener(function() {
             console.log(tab)
             const { title, url, favIconUrl } = tab;
 
-            const resp = await fetch(teamcityUrl + '/app/rest/buildQueue', {
-                method: 'POST',
-                mode: 'cors',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/xml',
-                    'Authorization': 'Bearer ' + teamcityToken,
-                },
-                body: `<build>
-                           <buildType id=\"${teamcityBuildTypeId}\"/>
-                           <properties>
-                           <property name=\"url\" value=\"${url}\"/>
-                           </properties>
-                        </build>`
-            });
+            const resp = await sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTypeId, url);
 
             const notification = new Notification(resp.ok ? 'Succeeded' : 'Failed', {
                 body: title + '\n' + url,
