@@ -61,7 +61,7 @@ class App extends React.Component {
             teamcityUrl: null,
             teamcityToken: null,
             teamcityBuildTypeId: null,
-            matchPattern: null,
+            matchPattern: '123',
         };
     }
 
@@ -95,6 +95,10 @@ class App extends React.Component {
         console.log('onSubmitButtonClick');
         const submittedUrls = await submitUrls(urls);
         message.info(`${submittedUrls.length} pages are submitted to TeamCity!`);
+    }
+
+    onMatchPatternValueChange(event) {
+        this.setState({matchPattern: event.target.value});
     }
 
     render() {
@@ -131,7 +135,7 @@ class App extends React.Component {
                             {margin: '10px'}
                         }>
                             <Col span={8}>
-                                <Input placeholder="" value={matchPattern}/>
+                                <Input placeholder="" value={matchPattern} onChange={e =>  this.onMatchPatternValueChange(e)}/>
                             </Col>
                             <Col span={2}><Button type="primary">Filter</Button></Col>
                             <Col span={12}></Col>
