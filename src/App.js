@@ -9,6 +9,12 @@ function callback(key) {
     console.log(key);
 }
 
+function saveToStorage(key, value) {
+    chrome.storage.sync.set({key}, function() {
+        console.log(`Saved configuration: ${key} -> ${value}`);
+    })
+}
+
 const layout = {
     labelCol: {span: 4},
     wrapperCol: {span: 16},
@@ -97,6 +103,12 @@ class App extends React.Component {
         message.info(`${submittedUrls.length} pages are submitted to TeamCity!`);
     }
 
+    onFilterButtonClick(event) {
+        console.log('onFilterButtonClick');
+        const pattern = this.state.matchPattern;
+        saveToStorage('matchPattern', pattern)
+    }
+
     onMatchPatternValueChange(event) {
         this.setState({matchPattern: event.target.value});
     }
@@ -137,7 +149,7 @@ class App extends React.Component {
                             <Col span={8}>
                                 <Input placeholder="" value={matchPattern} onChange={e =>  this.onMatchPatternValueChange(e)}/>
                             </Col>
-                            <Col span={2}><Button type="primary">Filter</Button></Col>
+                            <Col span={2}><Button type="primary" onClick={(e) => this.onFilterButtonClick(e)}>Filter</Button></Col>
                             <Col span={12}></Col>
                             <Col span={2}><Button type="primary" onClick={() => this.onSubmitButtonClick(filteredUrls)}>Submit</Button></Col>
                         </Row>
