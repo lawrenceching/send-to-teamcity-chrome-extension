@@ -71,6 +71,18 @@ class App extends React.Component {
         };
     }
 
+    onTeamCityUrlInputChange(event) {
+        this.setState({teamcityUrl: event.target.value});
+    }
+
+    onTeamcityTokenInputChange(event) {
+        this.setState({teamcityToken: event.target.value});
+    }
+
+    onTeamcityBuildTypeIdInputChange(event) {
+        this.setState({teamcityBuildTypeId: event.target.value});
+    }
+
     componentDidMount() {
         const self = this;
         if(!!chrome && !!chrome.storage) {
@@ -111,6 +123,17 @@ class App extends React.Component {
 
     onMatchPatternValueChange(event) {
         this.setState({matchPattern: event.target.value});
+    }
+
+    onOptionsTabSubmitButtonClick(event) {
+        const {
+            teamcityUrl,
+            teamcityToken,
+            teamcityBuildTypeId,
+        } = this.state;
+        saveToStorage('teamcityUrl', teamcityUrl);
+        saveToStorage('teamcityToken', teamcityToken);
+        saveToStorage('teamcityBuildTypeId', teamcityBuildTypeId);
     }
 
     render() {
@@ -168,16 +191,16 @@ class App extends React.Component {
                     <TabPane tab="Options" key="options">
                         <Form {...layout}>
                             <Form.Item label="TeamCity Url">
-                                <Input placeholder="http://teamcity.example.com" value={teamcityUrl}/>
+                                <Input placeholder="http://teamcity.example.com" value={teamcityUrl} onChange={e => this.onTeamCityUrlInputChange(e)}/>
                             </Form.Item>
                             <Form.Item label="TeamCity Token">
-                                <Input placeholder="" value={teamcityToken}/>
+                                <Input placeholder="" value={teamcityToken} onChange={e => this.onTeamcityTokenInputChange(e)}/>
                             </Form.Item>
                             <Form.Item label="TeamCity Build Type Id">
-                                <Input placeholder="" value={teamcityBuildTypeId}/>
+                                <Input placeholder="" value={teamcityBuildTypeId} onChange={e => this.onTeamcityBuildTypeIdInputChange(e)}/>
                             </Form.Item>
                             <Form.Item>
-                                <Button type="primary">Submit</Button>
+                                <Button type="primary" onClick={e => this.onOptionsTabSubmitButtonClick(e)}>Submit</Button>
                             </Form.Item>
                         </Form>
                     </TabPane>
