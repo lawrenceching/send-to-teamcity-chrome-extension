@@ -12,6 +12,9 @@ async function readConfiguration() {
     return p;
 }
 
+function escapeTeamCityArgument(value) {
+    return value.replace(/%/g, '%%');
+}
 async function sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTypeId, url) {
     const resp = await fetch(teamcityUrl + '/app/rest/buildQueue', {
         method: 'POST',
@@ -24,7 +27,7 @@ async function sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTy
         body: `<build>
                    <buildType id=\"${teamcityBuildTypeId}\"/>
                    <properties>
-                   <property name=\"url\" value=\"${url}\"/>
+                   <property name=\"url\" value=\"${escapeTeamCityArgument(url)}\"/>
                    </properties>
                 </build>`
     });
