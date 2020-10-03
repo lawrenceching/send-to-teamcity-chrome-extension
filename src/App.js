@@ -10,7 +10,9 @@ function callback(key) {
 }
 
 function saveToStorage(key, value) {
-    chrome.storage.sync.set({key}, function() {
+    const data = {};
+    data[key] = value;
+    chrome.storage.sync.set(data, function() {
         console.log(`Saved configuration: ${key} -> ${value}`);
     })
 }
@@ -67,7 +69,7 @@ class App extends React.Component {
             teamcityUrl: null,
             teamcityToken: null,
             teamcityBuildTypeId: null,
-            matchPattern: '123',
+            matchPattern: '',
         };
     }
 
