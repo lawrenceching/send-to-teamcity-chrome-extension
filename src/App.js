@@ -1,6 +1,6 @@
 /*global chrome*/
-import React, {useState} from 'react';
-import {Button, Divider, Form, Input, Row, Col, Table, Tabs, message} from 'antd';
+import React from 'react';
+import {Button, Form, Input, Row, Col, Table, Tabs, message} from 'antd';
 import './App.css';
 
 const {TabPane} = Tabs;
