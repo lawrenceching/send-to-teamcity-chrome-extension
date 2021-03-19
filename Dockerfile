@@ -20,4 +20,4 @@ RUN mv /tmp/build /tmp/send-to-teamcity-browser-extension
 RUN zip -r send-to-teamcity-browser-extension.zip ./send-to-teamcity-browser-extension
 
 FROM scratch AS export-stage
-COPY --from=zip /tmp/send-to-teamcity-browser-extension.zip /
+COPY --from=zip /tmp /
