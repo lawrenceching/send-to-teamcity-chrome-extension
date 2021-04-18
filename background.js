@@ -15,7 +15,7 @@ async function readConfiguration() {
 function escapeTeamCityArgument(value) {
     return value.replace(/%/g, '%%');
 }
-async function sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTypeId, url) {
+async function sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityCsrfToken, teamcityBuildTypeId, url) {
     const resp = await fetch(teamcityUrl + '/app/rest/buildQueue', {
         method: 'POST',
         mode: 'cors',
@@ -23,6 +23,7 @@ async function sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTy
         headers: {
             'Content-Type': 'application/xml',
             'Authorization': 'Bearer ' + teamcityToken,
+            'X-TC-CSRF-Token': teamcityCsrfToken,
         },
         body: `<build>
                    <buildType id=\"${teamcityBuildTypeId}\"/>
@@ -34,12 +35,27 @@ async function sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTy
     return resp;
 }
 
+async function getTeamCityCsrfToken(teamcityUrl, teamcityToken) {
+    const resp = await fetch(teamcityUrl + '/authenticationTest.html?csrf', {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/xml',
+            'Authorization': 'Bearer ' + teamcityToken,
+        }
+    });
+    return resp;
+}
+
 async function submitAll(request, sender, sendResponse) {
     const urls = request.urls;
     const { teamcityUrl, teamcityToken, teamcityBuildTypeId } = await readConfiguration();
 
+    const teamcityCsrfToken = await (await getTeamCityCsrfToken(teamcityUrl, teamcityToken)).text();
+
     for (const url of urls) {
-        const resp = await sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTypeId, url);
+        const resp = await sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityCsrfToken, teamcityBuildTypeId, url);
         console.log(`${resp.status} ${url}`);
         if(resp.ok) {
             
@@ -49,62 +65,75 @@ async function submitAll(request, sender, sendResponse) {
 }
 chrome.runtime.onInstalled.addListener(function() {
 
-    chrome.runtime.onMessage.addListener(
-        function(request, sender, sendResponse) {
-            
-            switch (request.action) {
-                case 'getMatchedTab':
-                    chrome.windows.getAll({populate:true},function(windows){
-                        windows.forEach(function(window){
-                          const urls = window.tabs.map(function(tab){
-                            return tab.url;
-                          });
-                          sendResponse({urls});
-                        });                        // console.log('Sent response: ' + urls)
-                      });
-
-                  break;
-                case 'submitAll':
-                    submitAll(request, sender, sendResponse)
-                    break;
-                default:
-                  sendResponse({});
-            }
-
-            return true;
-    });
-
-
     console.log('onInstalled()');
 
-    chrome.browserAction.onClicked.addListener(function(tab) {
+    try {
+        chrome.runtime.onMessage.addListener(
+            function(request, sender, sendResponse) {
 
-        console.log('onClicked()');
+                try {
+                    switch (request.action) {
+                        case 'getMatchedTab':
+                            chrome.windows.getAll({populate:true},function(windows){
+                                windows.forEach(function(window){
+                                    const urls = window.tabs.map(function(tab){
+                                        return tab.url;
+                                    });
+                                    sendResponse({urls});
+                                });                        // console.log('Sent response: ' + urls)
+                            });
 
-        (async () => {
+                            break;
+                        case 'submitAll':
+                            submitAll(request, sender, sendResponse)
+                            break;
+                        default:
+                            sendResponse({});
+                    }
+                } catch (e) {
+                    console.error('Unknown failure', e);
+                }
 
-            console.log('onClicked():async function')
 
-            const { teamcityUrl, teamcityToken, teamcityBuildTypeId } = await readConfiguration()
-            console.log('Send job to teamcity ', teamcityUrl, teamcityToken)
-            console.log(tab)
-            const { title, url, favIconUrl } = tab;
 
-            const resp = await sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityBuildTypeId, url);
-
-            const notification = new Notification(resp.ok ? 'Succeeded' : 'Failed', {
-                body: title + '\n' + url,
-                icon: favIconUrl
+                return true;
             });
 
-            setTimeout(() => {
-                notification.close();
-                console.log('Closed notification')
-            }, 2000);
+        console.log('onInstalled()');
 
-            const text = await resp.text();
-            console.log(text);
-        })();
-        
-    });
+        chrome.browserAction.onClicked.addListener(function(tab) {
+
+            console.log('onClicked()');
+
+            (async () => {
+
+                console.log('onClicked():async function')
+
+                const { teamcityUrl, teamcityToken, teamcityBuildTypeId } = await readConfiguration()
+                console.log('Send job to teamcity ', teamcityUrl, teamcityToken)
+                console.log(tab)
+                const { title, url, favIconUrl } = tab;
+
+                const teamcityCsrfToken = await (await getTeamCityCsrfToken(teamcityUrl, teamcityToken)).text();
+                const resp = await sendRequestToTeamCity(teamcityUrl, teamcityToken, teamcityCsrfToken, teamcityBuildTypeId, url);
+
+                const notification = new Notification(resp.ok ? 'Succeeded' : 'Failed', {
+                    body: title + '\n' + url,
+                    icon: favIconUrl
+                });
+
+                setTimeout(() => {
+                    notification.close();
+                    console.log('Closed notification')
+                }, 2000);
+
+                const text = await resp.text();
+                console.log(text);
+            })();
+
+        });
+    } catch (e) {
+        console.error('Unknown failure', e);
+    }
+
 });
